@@ -2,7 +2,6 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import '../css/app.css';
 import { initializeTheme } from '@/hooks/use-appearance';
 
@@ -20,14 +19,15 @@ createInertiaApp({
 
         root.render(
             <StrictMode>
-                <TooltipProvider delayDuration={0}>
+                {/* <TooltipProvider delayDuration={0}>
                     <App {...props} />
-                </TooltipProvider>
+                </TooltipProvider> */}
+                <App {...props} />
             </StrictMode>,
         );
     },
     progress: {
-        color: '#4B5563',
+        color: '#E11D48',
     },
 });
 

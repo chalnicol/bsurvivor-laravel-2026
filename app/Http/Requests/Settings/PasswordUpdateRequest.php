@@ -22,4 +22,11 @@ class PasswordUpdateRequest extends FormRequest
             'password' => $this->passwordRules(),
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'password.regex' => 'Your password must contain at least one uppercase letter, one number, and one special character.',
+        ];
+    }
 }

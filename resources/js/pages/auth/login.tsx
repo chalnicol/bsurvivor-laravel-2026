@@ -1,120 +1,144 @@
-import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
-import PasswordInput from '@/components/password-input';
-import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
-import AuthLayout from '@/layouts/auth-layout';
-import { register } from '@/routes';
-import { store } from '@/routes/login';
-import { request } from '@/routes/password';
+import React, { useEffect, useState } from 'react';
+import TransparentIcon from '../../components/transparentIcon';
+import TextInput from '../../components/textInput';
+import CustomLink from '../../components/customLink';
+import { useForm } from '@inertiajs/react';
+import CustomButton from '../../components/customButton';
+import PromptMessage from '@/components/promptMessage';
+import { AppCustomLayout } from '@/layouts/app-custom-layout';
+import AuthBase from '@/components/authBase';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faGoogle } from '@fortawesome/free-brands-svg-icons';
+import CheckButton from '@/components/checkButton';
 
-type Props = {
-    status?: string;
-    canResetPassword: boolean;
-    canRegister: boolean;
+const Login = () => {
+  const {
+    data,
+    setData,
+    processing,
+    hasErrors,
+    errors,
+    clearErrors,
+    post,
+    reset,
+  } = useForm({
+    email: '',
+    password: '',
+    remember: false,
+  });
+
+  const handleSubmit = (e: React.SubmitEvent) => {
+    e.preventDefault();
+    // Handle login
+    post('/login', {
+      onBefore: () => {
+        clearErrors();
+      },
+      onError: () => {
+        reset('password');
+      },
+      onSuccess: () => {
+        reset();
+      },
+    });
+  };
+
+  const handleSocialSignin = (social: string) => {
+    //..
+  };
+
+  return (
+    <>
+      <title>{`Login | ${import.meta.env.VITE_APP_NAME}`}</title>
+      <AuthBase>
+        <div className="relative w-full overflow-hidden rounded border border-gray-400 px-8 pt-2 pb-8 shadow-md">
+          <TransparentIcon className="absolute -top-12 -right-12 z-0 w-60 rotate-30 opacity-5" />
+          <div className="py-3 text-lg font-bold">Login</div>
+
+          <div className="relative z-10">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {hasErrors && (
+                <PromptMessage
+                  type="error"
+                  errors={errors}
+                  onClose={() => clearErrors()}
+                />
+              )}
+
+              <TextInput
+                type="email"
+                value={data.email}
+                onChange={(e) => setData('email', e.target.value)}
+                disabled={processing}
+                required
+                label="email"
+              />
+              <TextInput
+                type="password"
+                value={data.password}
+                onChange={(e) => setData('password', e.target.value)}
+                maxLength={15}
+                disabled={processing}
+                required
+                label="password"
+              />
+              <CheckButton
+                label="Remember Me"
+                onChange={() => setData('remember', !data.remember)}
+                checked={data.remember || false}
+                disabled={processing}
+              />
+
+              <CustomButton
+                color="transparent"
+                label="Submit"
+                disabled={processing}
+                loading={processing}
+                className="w-full bg-sky-800 py-2 uppercase hover:bg-sky-700"
+              />
+            </form>
+
+            <div className="mt-4 flex flex-col items-start space-y-1.5">
+              <CustomLink
+                label="Forgot Password?"
+                className="text-sm"
+                disabled={processing}
+                href="/forgot-password"
+              />
+              <CustomLink
+                label="Not Yet A Member?"
+                className="text-sm"
+                disabled={processing}
+                href="/register"
+              />
+            </div>
+
+            <div className="mt-6">
+              <hr className="mb-4 border-gray-400" />
+
+              <div className="-mt-7 flex items-center justify-center">
+                <p className="bg-gray-900 px-2 text-center text-sm font-semibold text-gray-400">
+                  or use google account to login
+                </p>
+              </div>
+
+              <div className="mt-5 flex justify-center gap-x-2">
+                <CustomButton
+                  disabled={processing}
+                  onClick={() => handleSocialSignin('google')}
+                  className="w-full bg-rose-700 py-2 hover:bg-rose-600"
+                >
+                  <FontAwesomeIcon icon={faGoogle} />
+                  <span className="text-sm">GOOGLE</span>
+                </CustomButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      </AuthBase>
+    </>
+  );
 };
 
-export default function Login({
-    status,
-    canResetPassword,
-    canRegister,
-}: Props) {
-    return (
-        <AuthLayout
-            title="Log in to your account"
-            description="Enter your email and password below to log in"
-        >
-            <Head title="Log in" />
-
-            <Form
-                {...store.form()}
-                resetOnSuccess={['password']}
-                className="flex flex-col gap-6"
-            >
-                {({ processing, errors }) => (
-                    <>
-                        <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    name="email"
-                                    required
-                                    autoFocus
-                                    tabIndex={1}
-                                    autoComplete="email"
-                                    placeholder="email@example.com"
-                                />
-                                <InputError message={errors.email} />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <div className="flex items-center">
-                                    <Label htmlFor="password">Password</Label>
-                                    {canResetPassword && (
-                                        <TextLink
-                                            href={request()}
-                                            className="ml-auto text-sm"
-                                            tabIndex={5}
-                                        >
-                                            Forgot password?
-                                        </TextLink>
-                                    )}
-                                </div>
-                                <PasswordInput
-                                    id="password"
-                                    name="password"
-                                    required
-                                    tabIndex={2}
-                                    autoComplete="current-password"
-                                    placeholder="Password"
-                                />
-                                <InputError message={errors.password} />
-                            </div>
-
-                            <div className="flex items-center space-x-3">
-                                <Checkbox
-                                    id="remember"
-                                    name="remember"
-                                    tabIndex={3}
-                                />
-                                <Label htmlFor="remember">Remember me</Label>
-                            </div>
-
-                            <Button
-                                type="submit"
-                                className="mt-4 w-full"
-                                tabIndex={4}
-                                disabled={processing}
-                                data-test="login-button"
-                            >
-                                {processing && <Spinner />}
-                                Log in
-                            </Button>
-                        </div>
-
-                        {canRegister && (
-                            <div className="text-center text-sm text-muted-foreground">
-                                Don't have an account?{' '}
-                                <TextLink href={register()} tabIndex={5}>
-                                    Sign up
-                                </TextLink>
-                            </div>
-                        )}
-                    </>
-                )}
-            </Form>
-
-            {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
-        </AuthLayout>
-    );
-}
+Login.layout = (page: React.ReactNode) => <AppCustomLayout children={page} />;
+export default Login;

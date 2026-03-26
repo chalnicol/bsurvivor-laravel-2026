@@ -19,4 +19,11 @@ class ProfileUpdateRequest extends FormRequest
     {
         return $this->profileRules($this->user()->id);
     }
+
+    public function messages(): array
+    {
+        return [
+            'username.regex' => 'The username may only contain letters, numbers, and underscores.'
+        ];
+    }
 }

@@ -1,44 +1,65 @@
-// Components
-import { Form, Head } from '@inertiajs/react';
-import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
-import AuthLayout from '@/layouts/auth-layout';
-import { logout } from '@/routes';
-import { send } from '@/routes/verification';
+import { useEffect, useState } from 'react';
+import TransparentIcon from '../../components/transparentIcon';
+import { useForm } from '@inertiajs/react';
+import AuthBase from '@/components/authBase';
+import PromptMessage from '@/components/promptMessage';
+import CustomButton from '@/components/customButton';
+import { AppCustomLayout } from '@/layouts/app-custom-layout';
 
-export default function VerifyEmail({ status }: { status?: string }) {
+const VerifyEmail = ({ status }: { status?: string }) => {
+    const [success, setSuccess] = useState('');
+    const { post, processing } = useForm({});
+
+    const handleResendEmail = () => {
+        // Handle resend email logic here
+        // console.log({ email });
+        post('/email/verification-notification', {
+            onFinish: () => {
+                setSuccess(
+                    'A verification link has been sent to your email address. Please click the link to confirm your account.',
+                );
+            },
+        });
+    };
+
     return (
-        <AuthLayout
-            title="Verify email"
-            description="Please verify your email address by clicking on the link we just emailed to you."
-        >
-            <Head title="Email verification" />
+        <AuthBase>
+            <div className="relative w-full overflow-hidden rounded-lg border border-gray-300 p-6 shadow-md">
+                <TransparentIcon className="absolute -top-10 -right-10 z-0 w-60 rotate-30 opacity-15" />
+                <div className="relative z-10">
+                    <h2 className="text-xl font-bold">Verify Email?</h2>
+                    <p className="mt-1 text-sm leading-normal text-slate-300">
+                        Check your inbox! We sent a link to verify your email.
+                        If you don't see it, check your spam folder just in
+                        case.
+                    </p>
 
-            {status === 'verification-link-sent' && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    A new verification link has been sent to the email address
-                    you provided during registration.
+                    <hr className="my-3 border-b border-gray-500" />
+
+                    <div className="space-y-3">
+                        {status && (
+                            <PromptMessage type="success" message={success} />
+                        )}
+
+                        <p className="text-sm text-slate-300">
+                            Didn't receive the email?
+                        </p>
+                        <CustomButton
+                            label="Resend Email"
+                            loading={processing}
+                            disabled={processing}
+                            onClick={handleResendEmail}
+                            className="w-full bg-blue-500 py-1.5 hover:bg-blue-400"
+                        />
+                    </div>
                 </div>
-            )}
-
-            <Form {...send.form()} className="space-y-6 text-center">
-                {({ processing }) => (
-                    <>
-                        <Button disabled={processing} variant="secondary">
-                            {processing && <Spinner />}
-                            Resend verification email
-                        </Button>
-
-                        <TextLink
-                            href={logout()}
-                            className="mx-auto block text-sm"
-                        >
-                            Log out
-                        </TextLink>
-                    </>
-                )}
-            </Form>
-        </AuthLayout>
+            </div>
+        </AuthBase>
     );
-}
+};
+
+VerifyEmail.layout = (page: React.ReactNode) => (
+    <AppCustomLayout children={page} />
+);
+
+export default VerifyEmail;

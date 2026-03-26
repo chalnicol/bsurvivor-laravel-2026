@@ -1,68 +1,86 @@
-// Components
-import { Form, Head } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import InputError from '@/components/input-error';
-import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import AuthLayout from '@/layouts/auth-layout';
-import { login } from '@/routes';
-import { email } from '@/routes/password';
+import { useEffect, useState } from 'react';
+import TransparentIcon from '../../components/transparentIcon';
+import { useForm } from '@inertiajs/react';
+import AuthBase from '@/components/authBase';
+import CustomButton from '@/components/customButton';
+import PromptMessage from '@/components/promptMessage';
+import { AppCustomLayout } from '@/layouts/app-custom-layout';
+import TextInput from '@/components/textInput';
 
-export default function ForgotPassword({ status }: { status?: string }) {
-    return (
-        <AuthLayout
-            title="Forgot password"
-            description="Enter your email to receive a password reset link"
-        >
-            <Head title="Forgot password" />
+const ForgotPassword = () => {
+  const {
+    data,
+    setData,
+    post,
+    hasErrors,
+    clearErrors,
+    reset,
+    errors,
+    processing,
+  } = useForm({
+    email: '',
+  });
 
-            {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
+  const [success, setSuccess] = useState<string | null>(null);
 
-            <div className="space-y-6">
-                <Form {...email.form()}>
-                    {({ processing, errors }) => (
-                        <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    name="email"
-                                    autoComplete="off"
-                                    autoFocus
-                                    placeholder="email@example.com"
-                                />
+  const handleSubmit = async (e: React.SubmitEvent) => {
+    e.preventDefault();
+    //.
+    clearErrors();
+    setSuccess(null);
+    post('/forgot-password', {
+      onFinish: () => {
+        reset();
+      },
+      onSuccess: () => {
+        setSuccess(
+          'A password reset link has been sent to your email address. Please check your inbox.',
+        );
+      },
+    });
+  };
 
-                                <InputError message={errors.email} />
-                            </div>
+  return (
+    <>
+      <title>{`Forgot Password | ${import.meta.env.VITE_APP_NAME}`}</title>
+      <AuthBase>
+        <div className="relative w-full overflow-hidden rounded-lg border border-gray-300 p-6 shadow-md">
+          <TransparentIcon className="absolute -top-10 -right-10 z-0 w-60 rotate-30 opacity-10" />
+          <div className="relative z-10">
+            <h2 className="text-xl font-bold">Forgot Password?</h2>
+            <p className="mt-2 text-sm leading-normal text-slate-300">
+              Enter the email associated with your account. If it's registered
+              with us, we'll send a password reset link to your inbox.
+            </p>
 
-                            <div className="my-6 flex items-center justify-start">
-                                <Button
-                                    className="w-full"
-                                    disabled={processing}
-                                    data-test="email-password-reset-link-button"
-                                >
-                                    {processing && (
-                                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                                    )}
-                                    Email password reset link
-                                </Button>
-                            </div>
-                        </>
-                    )}
-                </Form>
+            <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+              {hasErrors && <PromptMessage type="error" errors={errors} />}
+              {success && <PromptMessage type="success" message={success} />}
 
-                <div className="space-x-1 text-center text-sm text-muted-foreground">
-                    <span>Or, return to</span>
-                    <TextLink href={login()}>log in</TextLink>
-                </div>
-            </div>
-        </AuthLayout>
-    );
-}
+              <TextInput
+                label="email"
+                value={data.email}
+                onChange={(e) => setData('email', e.target.value)}
+                required
+                disabled={processing}
+              />
+
+              <CustomButton
+                label="Send Reset Link"
+                className="w-full bg-sky-800 py-2 hover:bg-sky-700"
+                disabled={processing}
+                loading={processing}
+              />
+            </form>
+          </div>
+        </div>
+      </AuthBase>
+    </>
+  );
+};
+
+ForgotPassword.layout = (page: React.ReactNode) => (
+  <AppCustomLayout children={page} />
+);
+
+export default ForgotPassword;

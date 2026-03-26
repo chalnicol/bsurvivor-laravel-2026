@@ -19,13 +19,19 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
+        $messages = [
+            'password.regex' => 'Your password must contain at least one uppercase letter, one number, and one special character.',
+            'username.regex' => 'The username may only contain letters, numbers, and underscores.'
+        ];
+
         Validator::make($input, [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
         ])->validate();
 
         return User::create([
-            'name' => $input['name'],
+            'username' => $input['username'],
+            'full_name' => $input['full_name'],
             'email' => $input['email'],
             'password' => $input['password'],
         ]);
