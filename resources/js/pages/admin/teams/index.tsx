@@ -53,7 +53,7 @@ const UserListing = ({ teams, filters }: UserListingProps) => {
                 <Link
                   key={item.id}
                   href={`/admin/teams/${item.id}`}
-                  className="flex flex-col overflow-hidden rounded border border-gray-500 bg-gray-800 hover:border-gray-300 hover:bg-gray-700"
+                  className="flex flex-col overflow-hidden rounded border border-gray-400 bg-gray-800 hover:bg-gray-700"
                 >
                   <div className="flex gap-2 p-2">
                     <div className="flex-shrink-0">

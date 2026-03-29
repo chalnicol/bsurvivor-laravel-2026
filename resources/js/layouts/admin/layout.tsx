@@ -42,7 +42,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
           <div className="flex flex-col gap-x-4 gap-y-2 md:flex-row">
             <FlexNav navItems={navItems} parentPath="/admin" />
-            <div className="flex-1">{children}</div>
+            <div className="min-w-0 flex-1">{children}</div>
           </div>
         </ContentBase>
       </AdminProvider>

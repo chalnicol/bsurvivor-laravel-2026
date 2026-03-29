@@ -26,6 +26,9 @@ class BracketChallengeResource extends JsonResource
             'seed_data'        => $this->seed_data,
             // Counts — only present when loaded via withCount()
             'entries_count'    => $this->whenCounted('entries'),
+            'is_open'          => $this->isAcceptingSubmissions(),
+            'is_locked'        => $this->isLocked(),
+    
 
             // Relationships — only present when loaded via with()
             'league_id'        => $this->league_id,

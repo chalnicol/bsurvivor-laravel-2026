@@ -254,7 +254,7 @@ const Navbar = ({ className }: { className?: string }) => {
                             href="/profile"
                             label="Profile"
                             onClick={() => setShowProfileMenu(false)}
-                            className="w-full p-1 text-sm"
+                            className="w-full p-1"
                           />
                         </li>
                         {isAdmin && (
@@ -263,7 +263,7 @@ const Navbar = ({ className }: { className?: string }) => {
                               href="/admin"
                               label="Admin Dashboard"
                               onClick={() => setShowProfileMenu(false)}
-                              className="w-full p-1 text-sm"
+                              className="w-full p-1"
                             />
                           </li>
                         )}

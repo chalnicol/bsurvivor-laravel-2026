@@ -25,10 +25,13 @@ class TeamResource extends JsonResource
             'matches_count' => $this->whenCounted('matches'),
 
             // Pivot data — only present when accessed via belongsToMany
-            'pivot' => $this->when(isset($this->pivot), [
-                'seed' => $this->pivot?->seed,
-                'slot' => $this->pivot?->slot,
-            ]),
+            // 'pivot' => $this->when(isset($this->pivot), [
+            //     'seed' => $this->pivot?->seed,
+            //     'slot' => $this->pivot?->slot,
+            // ]),
+            'seed' => $this->pivot?->seed ?? 0,
+            'slot' => $this->pivot?->slot ?? 0,
+
 
             // Relationships
             'league_id' => $this->league_id,

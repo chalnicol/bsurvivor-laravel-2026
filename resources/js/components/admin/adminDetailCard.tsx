@@ -14,14 +14,14 @@ const AdminDetailCard = ({
   return (
     <div
       className={cn(
-        'flex min-h-18 flex-col gap-1.5 rounded border border-gray-600 bg-gray-800/70 p-2',
+        'flex min-h-18 flex-col gap-1.5 rounded border border-gray-600 bg-gray-800 p-2',
         className,
       )}
     >
-      <span className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase">
+      <p className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase">
         {title}
-      </span>
-      <div>{children}</div>
+      </p>
+      <div className="min-w-0">{children}</div>
     </div>
   );
 };

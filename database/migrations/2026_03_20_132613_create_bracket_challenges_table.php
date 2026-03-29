@@ -17,7 +17,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->string('description')->nullable();
-            $table->enum('status', ['draft', 'open', 'closed', 'completed'])->default('draft');
+            // In bracket_challenges migration — update status enum
+            $table->enum('status', ['draft', 'published', 'completed'])->default('draft');
             $table->boolean('is_public')->default(false);
             $table->date('submission_start');
             $table->date('submission_end');

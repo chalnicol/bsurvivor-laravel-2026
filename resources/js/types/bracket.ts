@@ -1,5 +1,7 @@
 import { User, UserBase } from './auth';
 
+export type BracketSection = 'left' | 'right' | 'center';
+
 export type Conference = 'east' | 'west' | 'north' | 'south';
 
 export interface Team {
@@ -15,6 +17,8 @@ export interface Team {
   league_id: number;
   league?: League;
 }
+
+export type LeagueType = 'nba' | 'mpbl' | 'pba';
 
 export interface League {
   id: number;
@@ -39,8 +43,10 @@ export interface BracketChallengeMatch {
   id: number;
   name: string;
   round_index: number;
-  matchup_index: number;
-  conference?: Conference | null;
+  match_index: number;
+  conference?: string | null;
+  next_match_id: number | null;
+  next_match_slot: number | null;
   league_id: number;
   league?: League;
   teams: PlayoffTeam[];
@@ -49,16 +55,12 @@ export interface BracketChallengeMatch {
   winner_team_id: number | null;
 }
 
-export interface BracketChallengeMatchupPrediction {
+export interface BracketChallengePrediction {
   id: number;
-  matchup_id: number;
-  match: BracketChallengeMatch;
-  user_id: number;
-  user: UserBase;
-  created_at: string;
-  updated_at: string;
+  match_id: number;
+  match?: BracketChallengeMatch;
   predicted_winner_team_id: number | null;
-  status: 'correct' | 'incorrect' | 'pending' | 'selected' | 'void';
+  status: 'pending' | 'correct' | 'incorrect' | 'void';
 }
 
 export interface NbaTeamsSeedData<T = number> {
@@ -92,7 +94,7 @@ export type TeamIdsSeedData =
   | MpblTeamsSeedData
   | PbaTeamsSeedData;
 
-export type BracketChallengeStatus = 'draft' | 'open' | 'closed' | 'completed';
+export type BracketChallengeStatus = 'draft' | 'published' | 'completed';
 
 export interface BracketChallenge {
   id: number;
@@ -113,6 +115,8 @@ export interface BracketChallenge {
   entries: BracketChallengeEntry[];
   entries_count: number;
   seed_data: TeamIdsSeedData;
+  is_open: boolean;
+  is_locked: boolean;
 }
 
 export interface BracketChallengeEntry {
@@ -123,7 +127,7 @@ export interface BracketChallengeEntry {
   bracket_challenge: BracketChallenge;
   user_id: number;
   user: UserBase;
-  predictions: BracketChallengeMatchupPrediction[];
+  predictions: BracketChallengePrediction[];
   status: 'active' | 'eliminated' | 'won';
   comments: Comment[];
   comments_count: number;

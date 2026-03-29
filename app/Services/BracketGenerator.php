@@ -12,23 +12,6 @@ class BracketGenerator
 {
     /**
      * Generate bracket from seed_data.
-     *
-     * $seedData shape:
-     *
-     * Conference (NBA/MPBL):
-     * [
-     *   'league' => 'nba',
-     *   'teams'  => [
-     *     'east' => [id1, id2, ...],  // ordered by seed
-     *     'west' => [id1, id2, ...],
-     *   ]
-     * ]
-     *
-     * Flat (PBA):
-     * [
-     *   'league' => 'pba',
-     *   'teams'  => [id1, id2, ...]
-     * ]
      */
     public function generate(BracketChallenge $challenge, array $seedData): void
     {
@@ -43,8 +26,37 @@ class BracketGenerator
         });
     }
 
+    /**
+     * Regenerate bracket — update teams on existing matches.
+     * Only valid for draft challenges.
+     */
+    public function regenerate(BracketChallenge $challenge, array $seedData): void
+    {
+        DB::transaction(function () use ($challenge, $seedData) {
+            $league = $seedData['league'];
+
+            // Load all existing first round matches ordered correctly
+            $firstRoundMatches = GameMatch::where('bracket_challenge_id', $challenge->id)
+                ->where('round_index', 1)
+                ->orderBy('match_index')
+                ->get();
+
+            if ($firstRoundMatches->isEmpty()) {
+                // No matches yet — just generate fresh
+                $this->generate($challenge, $seedData);
+                return;
+            }
+
+            if ($league === 'pba') {
+                $this->reseadFlat($firstRoundMatches, $seedData['teams']);
+            } else {
+                $this->reseedConference($challenge, $firstRoundMatches, $seedData);
+            }
+        });
+    }
+
     // -------------------------------------------------------------------------
-    // Flat bracket (PBA — no conferences)
+    // Flat bracket (PBA)
     // -------------------------------------------------------------------------
 
     private function generateFlat(BracketChallenge $challenge, array $teamIds): void
@@ -57,28 +69,48 @@ class BracketGenerator
         $this->seedFirstRound($matchesByRound[1], $seededTeams);
     }
 
+    private function reseadFlat(Collection $firstRoundMatches, array $teamIds): void
+    {
+        $seededTeams = $this->loadTeamsInOrder($teamIds);
+        $pairs       = $this->generateSeedPairs($seededTeams->count());
+
+        foreach ($firstRoundMatches as $index => $match) {
+            [$topSeed, $bottomSeed] = $pairs[$index];
+
+            $topTeam    = $seededTeams->get($topSeed - 1);
+            $bottomTeam = $seededTeams->get($bottomSeed - 1);
+
+            // Detach old teams and reattach with new seeds
+            $match->teams()->detach();
+            $match->teams()->attach([
+                $topTeam->id    => ['seed' => $topSeed,    'slot' => 1],
+                $bottomTeam->id => ['seed' => $bottomSeed, 'slot' => 2],
+            ]);
+
+            // Reset match result since teams changed
+            $match->update(['winner_team_id' => null]);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Conference bracket (NBA/MPBL)
     // -------------------------------------------------------------------------
 
     private function generateConference(BracketChallenge $challenge, array $seedData): void
     {
-        $league      = $seedData['league'];
-        $conferences = $seedData['teams'];  // ['east' => [...], 'west' => [...]]
-
-        $conferenceKeys  = array_keys($conferences);   // ['east', 'west'] or ['north', 'south']
+        $conferences     = $seedData['teams'];
+        $conferenceKeys  = array_keys($conferences);
         $teamsPerConf    = count(reset($conferences));
         $roundsPerConf   = self::calculateRounds($teamsPerConf);
 
         $allConferenceMatches = [];
 
-        // Generate a bracket for each conference
         foreach ($conferences as $conference => $teamIds) {
             $seededTeams    = $this->loadTeamsInOrder($teamIds);
             $matchesByRound = $this->createMatchShells(
                 $challenge,
                 $roundsPerConf,
-                $conference
+                $conference,
             );
 
             $this->linkMatches($matchesByRound);
@@ -87,37 +119,81 @@ class BracketGenerator
             $allConferenceMatches[$conference] = $matchesByRound;
         }
 
-        // Create the Finals match — one round above conference finals
+        // Create Grand Finals match
         $finalsRound = $roundsPerConf + 1;
         $finalsMatch = GameMatch::create([
             'league_id'            => $challenge->league_id,
             'bracket_challenge_id' => $challenge->id,
-            'name'                 => 'Finals',
+            'name'                 => 'finals',
             'round_index'          => $finalsRound,
             'match_index'          => 1,
-            'conference'           => null,   // Finals has no conference
+            'conference'           => null,
             'winner_team_id'       => null,
             'next_match_id'        => null,
             'next_match_slot'      => null,
         ]);
 
-        // Link each conference's final match to the Finals
-        foreach ($conferenceKeys as $slot => $conference) {
-            $confFinalMatch = end($allConferenceMatches[$conference]);  // last round = conf final
+        // Link each conference final to Grand Finals
+        // East/North champ → slot 1, West/South champ → slot 2
+        $slotMap = [
+            'east'  => 1,
+            'north' => 1,
+            'west'  => 2,
+            'south' => 2,
+        ];
 
-            // conf final match is always a single match — get it
-            $confFinal = is_array($confFinalMatch)
-                ? $confFinalMatch[0]
-                : $confFinalMatch;
+        foreach ($conferenceKeys as $conference) {
+            $lastRound     = $allConferenceMatches[$conference][$roundsPerConf];
+            $confFinal     = is_array($lastRound) ? $lastRound[0] : $lastRound;
+            $slot          = $slotMap[$conference] ?? 1;
 
             $confFinal->update([
                 'next_match_id'   => $finalsMatch->id,
-                'next_match_slot' => $slot + 1,  // slot 1 = first conf, slot 2 = second conf
+                'next_match_slot' => $slot,
             ]);
         }
 
-        // Update challenge total_rounds to include Finals round
         $challenge->update(['total_rounds' => $finalsRound]);
+    }
+
+    private function reseedConference(
+        BracketChallenge $challenge,
+        Collection $firstRoundMatches,
+        array $seedData,
+    ): void {
+        $conferences = $seedData['teams'];
+
+        // Group first round matches by conference
+        $matchesByConference = $firstRoundMatches->groupBy('conference');
+
+        foreach ($conferences as $conference => $teamIds) {
+            $confMatches = $matchesByConference->get($conference, collect());
+            $seededTeams = $this->loadTeamsInOrder($teamIds);
+            $pairs       = $this->generateSeedPairs($seededTeams->count());
+
+            foreach ($confMatches->sortBy('match_index')->values() as $index => $match) {
+                [$topSeed, $bottomSeed] = $pairs[$index];
+
+                $topTeam    = $seededTeams->get($topSeed - 1);
+                $bottomTeam = $seededTeams->get($bottomSeed - 1);
+
+                $match->teams()->detach();
+                $match->teams()->attach([
+                    $topTeam->id    => ['seed' => $topSeed,    'slot' => 1],
+                    $bottomTeam->id => ['seed' => $bottomSeed, 'slot' => 2],
+                ]);
+
+                $match->update(['winner_team_id' => null]);
+            }
+        }
+
+        // Reset all non-first-round matches teams (they'll be populated as results come in)
+        GameMatch::where('bracket_challenge_id', $challenge->id)
+            ->where('round_index', '>', 1)
+            ->each(function (GameMatch $match) {
+                $match->teams()->detach();
+                $match->update(['winner_team_id' => null]);
+            });
     }
 
     // -------------------------------------------------------------------------
@@ -127,24 +203,24 @@ class BracketGenerator
     private function createMatchShells(
         BracketChallenge $challenge,
         int $totalRounds,
-        ?string $conference
+        ?string $conference,
     ): array {
         $matchesByRound = [];
 
         for ($round = 1; $round <= $totalRounds; $round++) {
             $matchCount = $this->matchesInRound($round, $totalRounds);
-            $roundName  = $this->roundName($round, $totalRounds);
             $matches    = [];
 
             for ($index = 1; $index <= $matchCount; $index++) {
-                $label = $conference
-                    ? ucfirst($conference) . ' - ' . $roundName . ' - Match ' . $index
-                    : $roundName . ' - Match ' . $index;
+                // Naming: east-r1-m1 / r1-m1 (PBA)
+                $name = $conference
+                    ? "{$conference}-r{$round}-m{$index}"
+                    : "r{$round}-m{$index}";
 
                 $matches[] = GameMatch::create([
                     'league_id'            => $challenge->league_id,
                     'bracket_challenge_id' => $challenge->id,
-                    'name'                 => $label,
+                    'name'                 => $name,
                     'round_index'          => $round,
                     'match_index'          => $index,
                     'conference'           => $conference,
@@ -208,39 +284,14 @@ class BracketGenerator
 
     private function generateSeedPairs(int $teamCount): array
     {
-        $seeds = range(1, $teamCount);
-        return $this->pairSeeds($seeds);
-    }
-
-    private function pairSeeds(array $seeds): array
-    {
-        $count = count($seeds);
-
-        if ($count === 2) {
-            return [[$seeds[0], $seeds[1]]];
-        }
-
-        $half   = $count / 2;
-        $top    = array_slice($seeds, 0, $half);
-        $bottom = array_reverse(array_slice($seeds, $half));
-
-        $pairs = [];
-        foreach ($top as $i => $seed) {
-            $pairs[] = [$seed, $bottom[$i]];
-        }
-
-        $result = [];
-        $mid    = (int) (count($pairs) / 2);
-
-        foreach (array_slice($pairs, 0, $mid) as $i => $pair) {
-            $result[] = $pair;
-            $bottomHalf = array_slice($pairs, $mid);
-            if (isset($bottomHalf[$i])) {
-                $result[] = $bottomHalf[$i];
-            }
-        }
-
-        return $result;
+        // Standard seeding: 1v8, 4v5, 3v6, 2v7
+        return match ($teamCount) {
+            8  => [[1,8], [4,5], [3,6], [2,7]],
+            16 => [[1,16], [8,9], [5,12], [4,13], [3,14], [6,11], [7,10], [2,15]],
+            32 => [[1,32], [16,17], [8,25], [9,24], [5,28], [12,21], [13,20], [4,29],
+                   [3,30], [14,19], [11,22], [6,27], [7,26], [10,23], [15,18], [2,31]],
+            default => throw new \InvalidArgumentException("Unsupported team count: {$teamCount}"),
+        };
     }
 
     private function matchesInRound(int $round, int $totalRounds): int
@@ -248,39 +299,8 @@ class BracketGenerator
         return (int) pow(2, $totalRounds - $round);
     }
 
-    private function roundName(int $round, int $totalRounds): string
-    {
-        $roundsFromEnd = $totalRounds - $round;
-
-        return match ($roundsFromEnd) {
-            0       => 'Conference Finals',
-            1       => 'Semifinal',
-            2       => 'Quarterfinal',
-            default => 'Round ' . $round,
-        };
-    }
-
     public static function calculateRounds(int $teamCount): int
     {
         return (int) log($teamCount, 2);
     }
 }
-
-// ```
-
-// ---
-
-// **The generated bracket structure for NBA (16 teams):**
-// ```
-// Round 1 (R1):  East Match 1-4   + West Match 1-4   (8 matches)
-// Round 2 (QF):  East Match 1-2   + West Match 1-2   (4 matches)
-// Round 3 (SF):  East Match 1     + West Match 1     (2 matches)
-// Round 4 (CF):  East Finals      + West Finals      (2 matches) ← conference = east/west
-// Round 5:       Finals                              (1 match)   ← conference = null
-// ```
-
-// **For PBA (8 teams):**
-// ```
-// Round 1: 4 matches
-// Round 2: 2 matches (SF)
-// Round 3: 1 match (Final) ← conference = null

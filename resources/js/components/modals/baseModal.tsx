@@ -40,7 +40,7 @@ const BaseModal: React.FC<BaseModalProps> = ({ children, size = 'md' }) => {
   }, []);
 
   return (
-    <div className="fixed top-0 left-0 z-50 flex h-dvh w-full items-center justify-center overflow-x-hidden overflow-y-auto bg-slate-800/70 p-4">
+    <div className="fixed top-0 left-0 z-50 flex h-dvh w-full items-center justify-center overflow-x-hidden overflow-y-auto bg-zinc-900/70 p-4">
       {/* <div className="absolute top-0 left-0 h-full w-full bg-gray-500 bg-gray-500/70"></div> */}
       <div ref={modalRef} className={cn('m-auto', widthCls[size])}>
         {children}

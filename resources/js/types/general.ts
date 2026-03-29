@@ -77,3 +77,5 @@ export interface OptionDetails {
 }
 
 export type ToastType = 'success' | 'error' | 'status';
+
+export type PillColor = 'amber' | 'sky' | 'emerald' | 'rose' | 'gray';

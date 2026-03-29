@@ -36,7 +36,7 @@ class MpblTeamsSeeder extends Seeder
             ['club_name' => 'Bacolod', 'monicker' => 'Mascarra', 'short_name' => 'BCD', 'conference' => 'south'],
             ['club_name' => 'Basilan', 'monicker' => 'Starhorse', 'short_name' => 'BAS', 'conference' => 'south'],
             ['club_name' => 'Batangas City', 'monicker' => 'Tanduay Rum Masters', 'short_name' => 'BTG', 'conference' => 'south'],
-            ['club_name' => 'Biñan', 'monicker' => 'Tatak Gel Beast Motorcycle', 'short_name' => 'BIN', 'conference' => 'south'],
+            ['club_name' => 'Biñan', 'monicker' => 'Tatak Gel', 'short_name' => 'BIN', 'conference' => 'south'],
             ['club_name' => 'Cebu', 'monicker' => 'Greats', 'short_name' => 'CEB', 'conference' => 'south'],
             ['club_name' => 'Davao Occidental', 'monicker' => 'Tigers', 'short_name' => 'DVO', 'conference' => 'south'],
             ['club_name' => 'General Santos', 'monicker' => 'Warriors', 'short_name' => 'GSN', 'conference' => 'south'],

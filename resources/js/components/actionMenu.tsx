@@ -11,10 +11,12 @@ const ActionMenu = ({
   options,
   className,
   disabled,
+  menuView = 'right',
 }: {
   options: OptionDetails[];
   className?: string;
   disabled?: boolean;
+  menuView?: 'left' | 'right';
 }) => {
   const [showOptions, setShowOptions] = useState(false);
 
@@ -69,12 +71,15 @@ const ActionMenu = ({
       {showOptions && (
         <div
           ref={optionsRef}
-          className="absolute top-full right-0 mt-1 flex min-w-40 cursor-pointer flex-col overflow-hidden rounded border border-gray-500 bg-gray-900 shadow-lg shadow-gray-700"
+          className={cn(
+            'absolute top-full mt-1 flex min-w-40 cursor-pointer flex-col divide-y divide-gray-600 overflow-hidden rounded border border-gray-500 bg-gray-900 shadow-lg shadow-gray-700',
+            menuView == 'left' ? 'left-0' : 'right-0',
+          )}
         >
           {options.map((option, index) => (
             <button
               key={index}
-              className="block cursor-pointer px-3 py-1.5 text-left text-sm hover:bg-gray-800"
+              className="block cursor-pointer px-3 py-2 text-left text-sm tracking-wide text-gray-200 hover:bg-gray-800/50"
               onClick={() => {
                 setShowOptions(false);
                 option.callback();

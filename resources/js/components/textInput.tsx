@@ -56,7 +56,7 @@ const TextInput: React.FC<TextInputProps> = ({
         <input
           {...props}
           className={cn(
-            '`autofill:text-fill-gray-900 z-10 h-full w-full rounded border border-gray-500 bg-gray-900 px-2 py-1 text-white focus:ring-1 focus:ring-gray-800 focus:outline-none',
+            '`autofill:text-fill-gray-900 z-10 h-full w-full rounded border border-gray-500 bg-gray-900 px-2 py-1.5 text-white focus:ring-1 focus:ring-gray-800 focus:outline-none',
             className,
           )}
         />

@@ -53,7 +53,7 @@ const UserListing = ({ leagues, filters }: UserListingProps) => {
                 <Link
                   key={item.id}
                   href={`/admin/leagues/${item.id}`}
-                  className="flex flex-col overflow-hidden rounded border border-gray-500 bg-gray-800 hover:border-gray-300 hover:bg-gray-700"
+                  className="flex flex-col overflow-hidden rounded border border-gray-400 bg-gray-800 hover:bg-gray-700"
                 >
                   <div className="flex gap-2 p-2">
                     <img
@@ -70,7 +70,7 @@ const UserListing = ({ leagues, filters }: UserListingProps) => {
                       <p className="text-xs text-slate-400">{item.name}</p>
                     </div>
                   </div>
-                  <div className="mt-auto flex justify-between border-t border-gray-500 px-2 py-0.5 text-[10px] font-semibold tracking-widest text-gray-300">
+                  <div className="mt-auto flex justify-between border-t border-gray-600 px-2 py-0.5 text-[10px] font-semibold tracking-widest text-gray-300">
                     <p>
                       ID:
                       {item.id < 10 ? `0${item.id}` : item.id}

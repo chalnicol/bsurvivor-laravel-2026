@@ -102,19 +102,14 @@ class BracketChallenge extends Model
 
    
 
-    public function isOpen(): bool
-    {
-        return $this->status === 'open';
-    }
-
     public function isDraft(): bool
     {
         return $this->status === 'draft';
     }
 
-    public function isClosed(): bool
+    public function isPublished(): bool
     {
-        return $this->status === 'closed';
+        return $this->status === 'published';
     }
 
     public function isCompleted(): bool
@@ -124,8 +119,13 @@ class BracketChallenge extends Model
 
     public function isAcceptingSubmissions(): bool
     {
-        return $this->isOpen()
+        return $this->isPublished()
             && now()->between($this->submission_start, $this->submission_end);
+    }
+
+    public function isLocked(): bool
+    {
+        return $this->isPublished() || $this->isCompleted();
     }
 
     /**

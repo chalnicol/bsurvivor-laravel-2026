@@ -58,7 +58,7 @@ const UserDetails = ({ user }: UserDetailsProps) => {
         : () => setToConfirmBlockUser(true),
     },
     {
-      label: 'Update Roles',
+      label: 'Update User Role',
       callback: () => setToUpdateRoles(true),
     },
   ];
@@ -156,7 +156,7 @@ const UserDetails = ({ user }: UserDetailsProps) => {
             <span
               className={cn(
                 'bg-gray-700 px-2 text-xs font-semibold tracking-wider uppercase',
-                user.is_verified ? 'text-emerald-500' : 'text-gray-400',
+                user.is_verified ? 'text-blue-400' : 'text-gray-400',
               )}
             >
               {user.is_verified ? 'Verified' : 'Unverified'}
@@ -167,7 +167,7 @@ const UserDetails = ({ user }: UserDetailsProps) => {
             <span
               className={cn(
                 'bg-gray-700 px-2 text-xs font-semibold tracking-wider uppercase',
-                user.is_blocked ? 'text-rose-500' : 'text-emerald-400',
+                user.is_blocked ? 'text-rose-400' : 'text-emerald-500',
               )}
             >
               {user.is_blocked ? 'Blocked' : 'Active'}
@@ -184,7 +184,7 @@ const UserDetails = ({ user }: UserDetailsProps) => {
 
       {toUpdateRoles && (
         <BaseModal size="lg">
-          <div className="rounded border border-gray-600 bg-gray-900 px-4 pt-3 pb-5 text-gray-300">
+          <div className="rounded border border-gray-600 bg-gray-800 px-4 pt-3 pb-5 text-gray-300">
             <h2 className="font-semibold">Update Roles</h2>
             <p className="text-xs text-slate-400">
               Select to add or remove roles for this user.
@@ -194,7 +194,7 @@ const UserDetails = ({ user }: UserDetailsProps) => {
               <PromptMessage type="error" message={error} className="my-4" />
             )}
 
-            <div className="my-4 flex flex-col overflow-hidden rounded border border-gray-500">
+            <div className="my-4 flex flex-col divide-y divide-gray-600 overflow-hidden rounded border border-gray-500">
               {roleOptions.map((option) => {
                 const isSelected = roles.includes(option.value);
                 return (
@@ -202,8 +202,8 @@ const UserDetails = ({ user }: UserDetailsProps) => {
                     key={option.value}
                     onClick={() => handleOptionClick(option.value)}
                     className={cn(
-                      'flex cursor-pointer items-center justify-between p-2 text-left text-sm even:bg-gray-800 disabled:pointer-events-none',
-                      isSelected && 'text-amber-100',
+                      'flex cursor-pointer items-center justify-between p-2 text-left text-sm hover:bg-gray-700/50 disabled:pointer-events-none',
+                      isSelected && 'bg-gray-700 text-amber-100',
                     )}
                     disabled={loading}
                   >

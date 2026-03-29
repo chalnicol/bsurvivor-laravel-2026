@@ -40,14 +40,14 @@ const UserListing = ({ users, filters }: UserListingProps) => {
       <div>
         {items.length > 0 ? (
           <>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-2 lg:grid-cols-2 xl:grid-cols-3">
               {items.map((item) => (
                 <Link
                   key={item.id}
                   href={`/admin/users/${item.id}`}
-                  className="flex flex-col overflow-hidden rounded border border-gray-500 bg-gray-800 hover:border-gray-300 hover:bg-gray-700"
+                  className="group flex flex-col overflow-hidden rounded border border-gray-400 bg-gray-800 hover:bg-gray-700"
                 >
-                  <div className="flex gap-2 p-2">
+                  <div className="flex items-center gap-2 p-2">
                     <div className="flex-none">
                       <img
                         src={getImageUrl(item.avatar, 'avatar')}
@@ -56,21 +56,31 @@ const UserListing = ({ users, filters }: UserListingProps) => {
                       />
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center gap-x-1.5 text-gray-300">
-                        <p className="text-sm font-semibold">
-                          {item.full_name}
-                        </p>
-                      </div>
+                      <p className="text-sm font-semibold">{item.full_name}</p>
                       <p className="text-xs text-slate-400">{item.email}</p>
                     </div>
 
                     <div className="flex flex-none flex-col gap-1">
-                      <p
+                      <span
                         className={cn(
-                          'aspect-square h-2 rounded-full',
-                          item.is_blocked ? 'bg-rose-500' : 'bg-green-600',
+                          'px-1 text-[10px] font-semibold',
+                          item.is_blocked
+                            ? 'bg-rose-400 text-white'
+                            : 'bg-emerald-500 text-white',
                         )}
-                      ></p>
+                      >
+                        {item.is_blocked ? 'B' : 'A'}
+                      </span>
+                      <span
+                        className={cn(
+                          'px-1 text-[10px] font-semibold',
+                          item.is_verified
+                            ? 'bg-sky-600 text-white'
+                            : 'bg-gray-700 text-gray-300',
+                        )}
+                      >
+                        V
+                      </span>
                     </div>
                   </div>
                   <div className="mt-auto flex justify-between border-t border-gray-600 px-2 py-0.5 text-[10px] font-semibold tracking-widest text-gray-300">

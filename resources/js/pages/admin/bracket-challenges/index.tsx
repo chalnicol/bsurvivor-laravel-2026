@@ -1,15 +1,11 @@
 import ActionMenu from '@/components/actionMenu';
 import Pagination from '@/components/pagination';
+import Pill from '@/components/pill';
 import SearchBar from '@/components/searchBar';
 import AdminLayout from '@/layouts/admin/layout';
-import { formatDate } from '@/lib/dateUtils';
-import { cn, getImageUrl } from '@/lib/utils';
-import {
-  BracketChallenge,
-  BracketChallengeStatus,
-  League,
-} from '@/types/bracket';
-import type { PaginatedResponse } from '@/types/general';
+import { cn } from '@/lib/utils';
+import { BracketChallenge, BracketChallengeStatus } from '@/types/bracket';
+import type { PaginatedResponse, PillColor } from '@/types/general';
 import { Link, router } from '@inertiajs/react';
 import { Network } from 'lucide-react';
 import { useState } from 'react';
@@ -40,11 +36,19 @@ const BracketChallengeListing = ({
     },
   ];
 
-  const statusClass: Record<BracketChallengeStatus, string> = {
-    closed: 'text-red-500',
-    completed: 'text-amber-100',
-    draft: 'text-slate-300',
-    open: 'text-green-500',
+  const pillClr: Record<BracketChallengeStatus, PillColor> = {
+    published: 'emerald',
+    completed: 'amber',
+    draft: 'gray',
+  };
+
+  const status: Record<
+    BracketChallengeStatus,
+    { label: string; txtClass: string }
+  > = {
+    published: { label: 'P', txtClass: 'bg-emerald-600 text-gray-200' },
+    completed: { label: 'C', txtClass: 'bg-amber-400 text-zinc-800' },
+    draft: { label: 'D', txtClass: 'bg-slate-500 text-slate-300' },
   };
 
   return (
@@ -67,34 +71,41 @@ const BracketChallengeListing = ({
                 <Link
                   key={item.id}
                   href={`/admin/bracket-challenges/${item.id}`}
-                  className="flex flex-col overflow-hidden rounded border border-gray-500 bg-gray-800 hover:border-gray-300 hover:bg-gray-700"
+                  className="flex flex-col overflow-hidden rounded border border-gray-400 bg-gray-800 hover:bg-gray-700"
                 >
                   <div className="flex gap-2 p-2">
                     <div className="flex-1">
-                      <div className="flex items-center gap-x-1.5 text-gray-300">
-                        <p className="text-sm font-semibold">{item.name}</p>
-                      </div>
-
-                      <span
-                        className={cn(
-                          'bg-gray-600 px-2 text-[10px] font-medium tracking-widest uppercase',
-                          statusClass[item.status],
-                        )}
-                      >
-                        {item.status}
-                      </span>
+                      <p className="font-semibold text-gray-300">{item.name}</p>
+                      <p className={cn('text-xs font-semibold text-slate-400')}>
+                        {item.league?.short_name}
+                      </p>
+                      {/* <Pill text={item.status} color={pillClr[item.status]} /> */}
                     </div>
 
                     <div className="flex flex-shrink-0 flex-col gap-1">
-                      <p
+                      <span
                         className={cn(
-                          'aspect-square h-2 rounded-full',
-                          item.is_public ? 'bg-green-600' : 'bg-gray-500',
+                          'px-1 text-[10px] font-semibold',
+                          item.is_public
+                            ? 'bg-emerald-600 text-gray-200'
+                            : 'bg-slate-500 text-slate-300',
                         )}
-                      ></p>
+                        title={item.is_public ? 'Public' : 'Private'}
+                      >
+                        P
+                      </span>
+                      <span
+                        className={cn(
+                          'px-1 text-[10px] font-semibold',
+                          status[item.status].txtClass,
+                        )}
+                        title={item.status}
+                      >
+                        {status[item.status].label}
+                      </span>
                     </div>
                   </div>
-                  <div className="mt-auto flex justify-between border-t border-gray-500 px-2 py-0.5 text-[10px] font-semibold tracking-widest text-gray-300">
+                  <div className="mt-auto flex justify-between border-t border-gray-400 px-2 py-0.5 text-[10px] font-semibold tracking-widest text-gray-300">
                     <p>
                       ID:
                       {item.id < 10 ? `0${item.id}` : item.id}

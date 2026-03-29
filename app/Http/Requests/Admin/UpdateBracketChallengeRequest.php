@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Team;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
@@ -25,22 +26,99 @@ class UpdateBracketChallengeRequest extends FormRequest
             'is_public'        => ['sometimes', 'boolean'],
             'submission_start' => ['sometimes', 'date'],
             'submission_end'   => ['sometimes', 'date', 'after:submission_start'],
+
+            // seed_data is optional on update — only validate if present
+            'seed_data'        => ['sometimes', 'array'],
+            'seed_data.league' => ['required_with:seed_data', 'string', 'in:nba,mpbl,pba'],
+            'seed_data.teams'  => ['required_with:seed_data'],
         ];
     }
 
-    public function messages(): array
+    public function withValidator($validator): void
     {
-        return [
-            'submission_end.after' => 'Submission end date must be after the start date.',
-        ];
+        $validator->after(function ($validator) {
+            $seedData = $this->input('seed_data');
+            $leagueId = $this->input('league_id')
+                ?? $this->route('bracketChallenge')->league_id;
+
+            if (! $seedData) return;
+
+            $league = $seedData['league'] ?? null;
+            $teams  = $seedData['teams'] ?? null;
+
+            if (! $league || ! $teams) return;
+
+            if ($league === 'pba') {
+                if (! is_array($teams) || ! array_is_list($teams)) {
+                    $validator->errors()->add('seed_data.teams', 'PBA teams must be a flat array.');
+                    return;
+                }
+                $this->validateTeamIds($validator, $teams, 'seed_data.teams');
+            } elseif (in_array($league, ['nba', 'mpbl'])) {
+                $conferences = $league === 'nba' ? ['east', 'west'] : ['north', 'south'];
+
+                foreach ($conferences as $conference) {
+                    $confTeams = $teams[$conference] ?? null;
+
+                    if (! is_array($confTeams) || empty($confTeams)) {
+                        $validator->errors()->add(
+                            "seed_data.teams.{$conference}",
+                            "The {$conference} conference teams are required."
+                        );
+                        continue;
+                    }
+
+                    $this->validateTeamIds($validator, $confTeams, "seed_data.teams.{$conference}");
+                }
+
+                $counts = array_map(fn ($conf) => count($teams[$conf] ?? []), $conferences);
+                if (count(array_unique($counts)) > 1) {
+                    $validator->errors()->add(
+                        'seed_data.teams',
+                        'Both conferences must have the same number of teams.'
+                    );
+                }
+            }
+
+            // Validate teams belong to league
+            if ($leagueId) {
+                $allTeamIds = $league === 'pba'
+                    ? $teams
+                    : array_merge(...array_values($teams));
+
+                if (! empty($allTeamIds)) {
+                    $invalidCount = Team::whereIn('id', $allTeamIds)
+                        ->where('league_id', '!=', $leagueId)
+                        ->count();
+
+                    if ($invalidCount > 0) {
+                        $validator->errors()->add(
+                            'seed_data.teams',
+                            'All selected teams must belong to the selected league.'
+                        );
+                    }
+                }
+            }
+        });
+    }
+
+    private function validateTeamIds($validator, array $teamIds, string $key): void
+    {
+        foreach ($teamIds as $index => $id) {
+            if (! is_int($id)) {
+                $validator->errors()->add("{$key}.{$index}", 'Each team must be a valid ID.');
+            }
+        }
+
+        if (count($teamIds) !== count(array_unique($teamIds))) {
+            $validator->errors()->add($key, 'Duplicate teams are not allowed.');
+        }
     }
 
     protected function prepareForValidation(): void
     {
         if ($this->has('slug')) {
-            $this->merge([
-                'slug' => Str::slug($this->input('slug')),
-            ]);
+            $this->merge(['slug' => Str::slug($this->input('slug'))]);
         }
     }
 }

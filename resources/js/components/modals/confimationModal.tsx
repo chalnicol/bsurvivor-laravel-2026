@@ -9,6 +9,7 @@ interface ConfirmationModalProps {
   loading?: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  button?: 'danger' | 'info';
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -18,13 +19,19 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   loading,
   onClose,
   onConfirm,
+  button = 'danger',
 }) => {
+  const btnClass = {
+    danger: 'bg-rose-700 px-3 hover:bg-rose-600',
+    info: 'bg-sky-700 px-3 hover:bg-sky-600',
+  };
+
   const finalMessage =
     message || 'Are you sure you want to perform this action?';
 
   return (
     <BaseModal size="lg">
-      <div className="space-y-2 rounded border border-gray-600 bg-gray-900 px-4 py-3">
+      <div className="space-y-3 rounded border border-gray-600 bg-gray-800 p-4 shadow-lg shadow-gray-800">
         <p className="font-semibold text-gray-300">{finalMessage}</p>
 
         {children ? (
@@ -35,7 +42,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           </p>
         ) : null}
 
-        <div className="mt-4 flex items-center space-x-2">
+        <div className="mt-6 flex items-center space-x-2">
           <CustomButton
             type="button"
             label="Cancel"
@@ -49,7 +56,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             loading={loading}
             disabled={loading}
             onClick={onConfirm}
-            className="bg-rose-700 px-3 hover:bg-rose-600"
+            className={btnClass[button]}
           />
         </div>
       </div>

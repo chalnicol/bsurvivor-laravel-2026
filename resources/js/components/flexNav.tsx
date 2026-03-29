@@ -80,10 +80,10 @@ const FlexNav = ({ className, parentPath, navItems }: FlexNavProps) => {
       {/* Mobile View */}
       <div
         ref={parentMenuRef}
-        className="relative mb-1 block rounded border border-gray-400 bg-gray-800 md:hidden"
+        className="relative mb-1 block rounded border border-gray-400 md:hidden"
       >
         <button
-          className="flex w-full cursor-pointer items-center gap-x-1 px-2 py-1 text-white hover:text-gray-300"
+          className="flex w-full cursor-pointer items-center gap-x-1 rounded px-2 py-1 text-amber-100 hover:bg-gray-700"
           onClick={() => setShowMenu((prev) => !prev)}
         >
           <Menu size={18} />
@@ -101,7 +101,7 @@ const FlexNav = ({ className, parentPath, navItems }: FlexNavProps) => {
         {showMenu && (
           <div
             ref={menuRef}
-            className="absolute z-20 mt-2 grid w-full grid-cols-2 gap-1 overflow-hidden rounded border border-gray-400 bg-gray-800 p-2"
+            className="absolute z-20 mt-2 grid w-full grid-cols-2 gap-1.5 overflow-hidden rounded border border-gray-300 bg-gray-900 p-2 shadow-md shadow-gray-600"
           >
             {navItems.map((item, i) => {
               const active = isActive(item.href);
@@ -109,7 +109,7 @@ const FlexNav = ({ className, parentPath, navItems }: FlexNavProps) => {
                 <button
                   key={item.id}
                   className={cn(
-                    'w-full cursor-pointer px-3 py-1.5 text-left text-sm font-semibold transition-colors hover:bg-gray-700 disabled:cursor-default disabled:bg-gray-700 disabled:text-amber-100 disabled:shadow-none',
+                    'w-full cursor-pointer rounded border border-gray-300 px-3 py-1.5 text-left text-sm font-semibold transition-colors hover:bg-gray-700 disabled:cursor-default disabled:bg-gray-700 disabled:text-amber-100 disabled:shadow-none',
                   )}
                   disabled={active}
                   onClick={() => handleMenuClick(item.href)}
@@ -138,7 +138,7 @@ const FlexNav = ({ className, parentPath, navItems }: FlexNavProps) => {
                   'block w-full rounded border border-gray-300 px-2.5 py-1.5 text-left text-sm font-semibold shadow transition-all duration-300',
                   active
                     ? 'pointer-events-none cursor-default bg-gray-800 text-amber-100'
-                    : 'cursor-pointer bg-gray-900 text-white hover:bg-gray-700 active:scale-95',
+                    : 'cursor-pointer bg-gray-900 text-white hover:bg-gray-800 active:scale-95',
                 )}
               >
                 {item.label}
