@@ -8,6 +8,14 @@ use Inertia\Inertia;
 use App\Models\BracketChallenge;
 use App\Http\Resources\BracketChallengeResource;
 
+use App\Models\BracketChallengeEntry;
+use App\Http\Resources\BracketChallengeEntryResource;
+
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redirect;
+use Inertia\Response;
+
+
 class PagesController extends Controller
 {
     //
@@ -29,6 +37,28 @@ class PagesController extends Controller
     public function about()
     {
         return Inertia::render('about');
+    }
+
+    public function showEntry(string $slug):Response
+    {
+
+        $isUserEntry = false;
+
+        $entry = BracketChallengeEntry::with(['bracketChallenge.league', 'bracketChallenge.matches.teams',   'user', 'predictions'])
+            ->where('slug', $slug)
+            ->firstOrFail();
+
+        if ( Auth::check()) {
+            if ( $entry->user->id === Auth::id()) {
+                $isUserEntry = true;
+            }
+        }
+
+        return Inertia::render('entry', [
+            'entry' => new BracketChallengeEntryResource($entry),
+            'isUserEntry' => $isUserEntry,
+        ]);
+
     }
 
 }

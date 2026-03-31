@@ -21,6 +21,9 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use App\Jobs\OrchestrateBracketProcessing;
+
+
 class BracketChallengeController extends Controller
 {
     public function __construct(
@@ -273,21 +276,100 @@ class BracketChallengeController extends Controller
     // declareWinner
     // -------------------------------------------------------------------------
 
+    // public function declareWinner(
+    //     DeclareWinnerRequest $request,
+    //     BracketChallenge $bracketChallenge,
+    //     GameMatch $match,
+    // ): RedirectResponse {
+    //     if ($bracketChallenge->isCompleted()) {
+    //         return back()->with('error', 'This challenge is already completed.');
+    //     }
+
+    //     if (! $bracketChallenge->isPublished()) {
+    //         return back()->with('error', 'Challenge must be published before declaring winners.');
+    //     }
+
+    //     if ($match->bracket_challenge_id !== $bracketChallenge->id) {
+    //         abort(404);
+    //     }
+
+    //     if ($match->isDecided()) {
+    //         return back()->with('error', 'Winner has already been declared for this match.');
+    //     }
+
+    //     if (! $match->isReady()) {
+    //         return back()->with('error', 'Match does not have both teams yet.');
+    //     }
+
+    //     $team = Team::findOrFail($request->validated('winner_team_id'));
+
+    //     $match->declareWinner($team);
+
+    //     return back()->with('success', "Winner declared: {$team->club_name}.");
+    // }
+
+    // // -------------------------------------------------------------------------
+    // // resetMatch
+    // // -------------------------------------------------------------------------
+
+    // public function resetMatch(
+    //     BracketChallenge $bracketChallenge,
+    //     GameMatch $match,
+    // ): RedirectResponse {
+    //     if ($bracketChallenge->isCompleted()) {
+    //         return back()->with('error', 'Cannot reset a match on a completed challenge.');
+    //     }
+
+    //     if (! $bracketChallenge->isPublished()) {
+    //         return back()->with('error', 'Challenge must be published to reset matches.');
+    //     }
+
+    //     if ($match->bracket_challenge_id !== $bracketChallenge->id) {
+    //         abort(404);
+    //     }
+
+    //     if (! $match->isDecided()) {
+    //         return back()->with('error', 'This match has no result to reset.');
+    //     }
+
+    //     $nextMatch = $match->nextMatch;
+    //     if ($nextMatch && $nextMatch->isDecided()) {
+    //         return back()->with('error', 'Cannot reset — a later match has already been decided. Reset that first.');
+    //     }
+
+    //     DB::transaction(function () use ($match) {
+    //         $previousWinnerId = $match->winner_team_id;
+
+    //         $match->update(['winner_team_id' => null]);
+
+    //         $match->predictions()->update(['status' => 'void']);
+
+    //         $match->predictions()->with('entry')->get()
+    //               ->each(fn ($p) => $p->entry->recalculateScore());
+
+    //         if ($match->next_match_id && $previousWinnerId) {
+    //             $match->nextMatch->teams()->detach($previousWinnerId);
+    //         }
+    //     });
+
+    //     return back()->with('success', 'Match result has been reset.');
+    // }
+
     public function declareWinner(
         DeclareWinnerRequest $request,
         BracketChallenge $bracketChallenge,
         GameMatch $match,
     ): RedirectResponse {
-        if ($bracketChallenge->isCompleted()) {
-            return back()->with('error', 'This challenge is already completed.');
+        if ($match->bracket_challenge_id !== $bracketChallenge->id) {
+            abort(404);
         }
 
         if (! $bracketChallenge->isPublished()) {
-            return back()->with('error', 'Challenge must be published before declaring winners.');
+            return back()->with('error', 'Winners can only be declared on published challenges.');
         }
 
-        if ($match->bracket_challenge_id !== $bracketChallenge->id) {
-            abort(404);
+        if (! $bracketChallenge->canUpdateMatches()) {
+            return back()->with('error', 'Match results cannot be declared until the submission period has ended.');
         }
 
         if ($match->isDecided()) {
@@ -300,29 +382,31 @@ class BracketChallengeController extends Controller
 
         $team = Team::findOrFail($request->validated('winner_team_id'));
 
-        $match->declareWinner($team);
+        DB::transaction(function () use ($bracketChallenge, $match, $team) {
+            $match->declareWinner($team);
+            $bracketChallenge->refresh();
+        });
+
+        // Dispatch AFTER transaction commits
+        OrchestrateBracketProcessing::dispatch($bracketChallenge->id);
 
         return back()->with('success', "Winner declared: {$team->club_name}.");
     }
-
-    // -------------------------------------------------------------------------
-    // resetMatch
-    // -------------------------------------------------------------------------
 
     public function resetMatch(
         BracketChallenge $bracketChallenge,
         GameMatch $match,
     ): RedirectResponse {
-        if ($bracketChallenge->isCompleted()) {
-            return back()->with('error', 'Cannot reset a match on a completed challenge.');
+        if ($match->bracket_challenge_id !== $bracketChallenge->id) {
+            abort(404);
         }
 
         if (! $bracketChallenge->isPublished()) {
-            return back()->with('error', 'Challenge must be published to reset matches.');
+            return back()->with('error', 'Match results can only be reset on published challenges.');
         }
 
-        if ($match->bracket_challenge_id !== $bracketChallenge->id) {
-            abort(404);
+        if (! $bracketChallenge->canUpdateMatches()) {
+            return back()->with('error', 'Match results cannot be reset until the submission period has ended.');
         }
 
         if (! $match->isDecided()) {
@@ -334,20 +418,23 @@ class BracketChallengeController extends Controller
             return back()->with('error', 'Cannot reset — a later match has already been decided. Reset that first.');
         }
 
-        DB::transaction(function () use ($match) {
+        DB::transaction(function () use ($bracketChallenge, $match) {
             $previousWinnerId = $match->winner_team_id;
 
             $match->update(['winner_team_id' => null]);
-
             $match->predictions()->update(['status' => 'void']);
-
-            $match->predictions()->with('entry')->get()
-                  ->each(fn ($p) => $p->entry->recalculateScore());
 
             if ($match->next_match_id && $previousWinnerId) {
                 $match->nextMatch->teams()->detach($previousWinnerId);
             }
+
+            if ($match->isFinal()) {
+                $bracketChallenge->update(['status' => 'published']);
+            }
         });
+
+        // Dispatch AFTER transaction commits
+        OrchestrateBracketProcessing::dispatch($bracketChallenge->id);
 
         return back()->with('success', 'Match result has been reset.');
     }

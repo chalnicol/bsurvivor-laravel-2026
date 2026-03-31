@@ -53,6 +53,7 @@ export interface BracketChallengeMatch {
   created_at: string;
   updated_at: string;
   winner_team_id: number | null;
+  predicted_winner_team_id?: number | null;
 }
 
 export interface BracketChallengePrediction {
@@ -117,6 +118,7 @@ export interface BracketChallenge {
   seed_data: TeamIdsSeedData;
   is_open: boolean;
   is_locked: boolean;
+  can_update_matches: boolean;
 }
 
 export interface BracketChallengeEntry {

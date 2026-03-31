@@ -28,8 +28,8 @@ class Prediction extends Model
 
     public function match(): BelongsTo
     {
-        return $this->belongsTo(GameMatch::class, 'match_id')
-                    ->withTrashed();
+        return $this->belongsTo(GameMatch::class, 'match_id');
+                    // ->withTrashed();
     }
 
     public function predictedWinner(): BelongsTo

@@ -215,7 +215,7 @@ const BracketChallengeForm = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SubmitEvent) => {
     e.preventDefault();
 
     if (!content) {
@@ -305,23 +305,10 @@ const BracketChallengeForm = ({
               <textarea
                 value={data.description}
                 onChange={(e) => setData('description', e.target.value)}
-                rows={5}
-                className="block w-full resize-none rounded border border-gray-300 bg-transparent p-1 px-2 text-sm text-gray-400 outline-none"
+                className="block h-20 w-full resize-none rounded border border-gray-300 bg-transparent px-2 py-1 text-gray-300 outline-none"
               />
             </div>
 
-            {/* <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="is_public"
-                checked={data.is_public}
-                onChange={(e) => setData('is_public', e.target.checked)}
-                className="aspect-square w-4 rounded accent-amber-100"
-              />
-              <label htmlFor="is_public" className="text-sm text-gray-300">
-                Is Public
-              </label>
-            </div> */}
             <CheckButton
               label="Is Public"
               onChange={() => setData('is_public', !data.is_public)}

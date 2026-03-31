@@ -199,7 +199,7 @@ const UserDetails = ({ challenge }: BracketChallengeDetailsProps) => {
             title="Bracket"
             className="grid md:col-span-2 lg:col-span-3"
           >
-            <BracketChallengeProvider challenge={challenge}>
+            <BracketChallengeProvider challenge={challenge} mode="update">
               <BracketTree />
             </BracketChallengeProvider>
           </AdminDetailCard>

@@ -1,6 +1,7 @@
 import ActionMenu from '@/components/actionMenu';
 import BracketTree from '@/components/bracket/bracketTree';
 import ContentBase from '@/components/contentBase';
+import CustomLink from '@/components/customLink';
 import DetailCard from '@/components/detailCard';
 import Detail from '@/components/detailCard';
 import Pill from '@/components/pill';
@@ -13,8 +14,12 @@ import { useState } from 'react';
 
 const BracketChallengeShow = ({
   challenge,
+  userEntry,
+  canSubmit,
 }: {
   challenge: BracketChallenge;
+  userEntry: { slug: string } | null;
+  canSubmit: boolean;
 }) => {
   // console.log(challenge);
   const [loading, setLoading] = useState(false);
@@ -61,8 +66,23 @@ const BracketChallengeShow = ({
             </DetailCard>
           </div>
 
+          {userEntry && (
+            <div className="flex items-center justify-between rounded border border-gray-600 bg-gray-800 px-3 py-2">
+              <p>You submitted an entry for this challenge.</p>
+              <CustomLink
+                href={`/bracket-challenge-entries/${userEntry.slug}`}
+                type="button"
+                label="View Entry"
+                className="bg-amber-600 px-3 text-xs uppercase hover:bg-amber-500"
+              />
+            </div>
+          )}
+
           <div className="rounded border border-gray-400 p-3">
-            <BracketChallengeProvider challenge={challenge}>
+            <BracketChallengeProvider
+              challenge={challenge}
+              mode={canSubmit ? 'create' : 'view'}
+            >
               <BracketTree />
             </BracketChallengeProvider>
           </div>

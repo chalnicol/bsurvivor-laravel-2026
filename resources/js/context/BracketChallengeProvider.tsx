@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 import {
@@ -10,7 +11,9 @@ import {
   BracketChallengeMatch,
   BracketChallengePrediction,
   Conference,
+  PlayoffTeam,
 } from '@/types/bracket';
+import { router } from '@inertiajs/react';
 
 interface RoundsInfo {
   rounds: number;
@@ -21,19 +24,23 @@ interface BracketChallengeContextType {
   league: string;
   loading: boolean;
   mode: 'view' | 'create' | 'update';
-
   getMatchesByConference: (value?: Conference) => BracketChallengeMatch[];
   getFinalsMatch: () => BracketChallengeMatch | null;
   getLinkedMatchName: (matchId: number, slot: number) => string;
-
-  teamAdvance: (matchId: number, teamId: number) => void;
+  promoteTeam: (matchId: number, teamId: number) => void;
   getPlayoffInfo: () => RoundsInfo;
   clearMatch: (matchId: number, conference?: Conference) => void;
+  removeMatchWinner: (matchId: number) => void;
   clearAll: () => void;
   submit: () => void;
-  hasPrediction: boolean;
-  isFilled: boolean;
-  removeMatchWinner: (matchId: number) => void;
+  update: () => void;
+  revert: () => void;
+  isSlotLocked: (matchId: number) => boolean;
+  isFilledAny: boolean;
+  predictionsFilledOut: boolean;
+  canUpdateMatches: boolean;
+  isUpdated: boolean;
+  hasRealWinners: boolean;
 }
 
 const BracketChallengeContext =
@@ -43,7 +50,7 @@ export const BracketChallengeProvider = ({
   challenge,
   entryPredictions,
   children,
-  mode = 'create',
+  mode = 'view',
 }: {
   challenge: BracketChallenge;
   children: React.ReactNode;
@@ -64,17 +71,141 @@ export const BracketChallengeProvider = ({
     [],
   );
 
-  const hasPrediction = predictions.some(
-    (p) => p.predicted_winner_team_id !== null,
+  // const isFilledAny = predictions.some(
+  //   (p) => p.predicted_winner_team_id !== null || p.,
+  // );
+
+  const isFilledAny = matches.some(
+    (m) => m.winner_team_id !== null || m.predicted_winner_team_id !== null,
   );
 
-  const isFilled = !predictions.some((p) => p.predicted_winner_team_id == null);
+  const predictionsFilledOut = !predictions.some(
+    (p) => p.predicted_winner_team_id == null,
+  );
+
+  const hasRealWinners = challenge.matches.some(
+    (m) => m.winner_team_id !== null,
+  );
+
+  const canUpdateMatches = mode == 'update' && challenge.can_update_matches;
 
   useEffect(() => {
-    if (mode !== 'create') return;
+    if (mode == 'update') return;
     if (entryPredictions) {
-      setPredictions(entryPredictions);
+      populateMatches();
     } else {
+      createEmptyPredictions();
+    }
+  }, []);
+
+  const playoffRounds: Record<string, string[]> = {
+    nba: ['Round 1', 'Semifinals', 'Conf. Finals'],
+    mpbl: ['Quarterfinals', 'Semifinals', 'Division Finals'],
+    pba: ['Quarterfinals', 'Semifinals'],
+  };
+
+  const isUpdated = useMemo((): boolean => {
+    const realWinnerTeamIds = challenge.matches.filter(
+      (m) => m.winner_team_id !== null,
+    );
+
+    const updateWinnerTeamIds = matches.filter(
+      (m) => m.winner_team_id !== null,
+    );
+
+    return realWinnerTeamIds.length !== updateWinnerTeamIds.length;
+  }, [challenge.matches, matches]);
+
+  const isSlotLocked = (matchId: number): boolean => {
+    const match =
+      challenge.matches.find(
+        (m) =>
+          m.id == matchId && (m.winner_team_id !== null || m.round_index > 1),
+      ) || null;
+
+    return mode !== 'view' && match !== null;
+  };
+
+  const populateMatches = () => {
+    if (!entryPredictions) return;
+
+    // 1. Source of Truth (All teams from the initial Round 1 state)
+    const allTeams: PlayoffTeam[] = matches
+      .filter((m) => m.round_index === 1)
+      .flatMap((m) => m.teams);
+
+    let updatedMatches: BracketChallengeMatch[] = [...matches];
+    const totalRounds = challenge?.total_rounds || 4;
+
+    // 2. The Iteration (Start at Round 1 to set winners, but only update TEAMS from R2+)
+    for (let r = 1; r <= totalRounds; r++) {
+      updatedMatches = updatedMatches.map((currentMatch) => {
+        // Find user's prediction for this specific match
+        const prediction = entryPredictions.find(
+          (p) => p.match_id === currentMatch.id,
+        );
+
+        // --- ROUND 1: Only update the winner ID ---
+        if (currentMatch.round_index === 1 && r === 1) {
+          return {
+            ...currentMatch,
+            predicted_winner_team_id:
+              prediction?.predicted_winner_team_id || null,
+          };
+        }
+
+        // --- ROUNDS 2+: Update Teams AND Winner ID ---
+        if (currentMatch.round_index === r && r > 1) {
+          // Find parent matches (the ones feeding into this match)
+          const parents = updatedMatches.filter(
+            (p) => p.next_match_id === currentMatch.id,
+          );
+
+          const newTeams: PlayoffTeam[] = parents.map((parent) => {
+            const parentPred = entryPredictions.find(
+              (p) => p.match_id === parent.id,
+            );
+
+            if (parentPred) {
+              const winner = allTeams.find(
+                (t) => t.id === parentPred.predicted_winner_team_id,
+              );
+              if (winner) {
+                return { ...winner, slot: parent.next_match_slot || 1 };
+              }
+            }
+
+            // Placeholder so the UI doesn't break
+            return {
+              id: 0,
+              club_name: '',
+              monicker: '',
+              slot: parent.next_match_slot || 1,
+            } as PlayoffTeam;
+          });
+
+          // Ensure Top/Bottom sorting
+          const sortedTeams = newTeams.sort(
+            (a, b) => (a.slot ?? 0) - (b.slot ?? 0),
+          );
+
+          return {
+            ...currentMatch,
+            teams: sortedTeams,
+            predicted_winner_team_id:
+              prediction?.predicted_winner_team_id || null,
+          };
+        }
+
+        return currentMatch;
+      });
+    }
+
+    setMatches(updatedMatches);
+  };
+
+  const createEmptyPredictions = () => {
+    if (mode === 'create') {
       const newPredictions: BracketChallengePrediction[] =
         challenge.matches.map((m, i) => {
           return {
@@ -86,12 +217,6 @@ export const BracketChallengeProvider = ({
         });
       setPredictions(newPredictions);
     }
-  }, []);
-
-  const playoffRounds: Record<string, string[]> = {
-    nba: ['Round 1', 'Semifinals', 'Conf. Finals'],
-    mpbl: ['Quarterfinals', 'Semifinals', 'Division Finals'],
-    pba: ['Quarterfinals', 'Semifinals'],
   };
 
   const getPlayoffInfo = (): RoundsInfo => {
@@ -120,7 +245,7 @@ export const BracketChallengeProvider = ({
     return matches;
   };
 
-  const teamAdvance = (matchId: number, teamId: number) => {
+  const promoteTeam = (matchId: number, teamId: number) => {
     const currentMatch = matches.find((m) => m.id === matchId);
     if (!currentMatch) return;
 
@@ -153,7 +278,7 @@ export const BracketChallengeProvider = ({
       return prev.map((m) => {
         // ALWAYS update the current match winner
         if (m.id === matchId) {
-          return { ...m, winner_team_id: teamId };
+          return { ...m, predicted_winner_team_id: teamId };
         }
 
         // ONLY update target match if IDs match AND we have a valid slot/team
@@ -187,7 +312,10 @@ export const BracketChallengeProvider = ({
         prev.map((p) => {
           // Clear if it's the specific match OR one of the target matches
           if (p.match_id === matchId || targetMatchIds.includes(p.match_id)) {
-            return { ...p, predicted_winner_team_id: null };
+            return {
+              ...p,
+              predicted_winner_team_id: null,
+            };
           }
           return p;
         }),
@@ -198,12 +326,14 @@ export const BracketChallengeProvider = ({
     setMatches((prev) =>
       prev.map((m) => {
         // Clear winner for the target matches
-        if (targetMatchIds.includes(m.id)) {
-          return { ...m, winner_team_id: null };
-        }
+
         // Clear teams for the current match
         if (m.id === matchId) {
+          // console.log('cleared');
           return { ...m, teams: [] };
+        }
+        if (targetMatchIds.includes(m.id)) {
+          return { ...m, predicted_winner_team_id: null, winner_team_id: null };
         }
         return m;
       }),
@@ -217,6 +347,7 @@ export const BracketChallengeProvider = ({
         return {
           ...m,
           winner_team_id: null,
+          predicted_winner_team_id: null,
           teams: teams,
         };
       }),
@@ -236,7 +367,7 @@ export const BracketChallengeProvider = ({
     setMatches((prev) =>
       prev.map((m) => {
         if (m.id === matchId) {
-          return { ...m, winner_team_id: null };
+          return { ...m, winner_team_id: null, predicted_winner_team_id: null };
         }
         return m;
       }),
@@ -265,7 +396,32 @@ export const BracketChallengeProvider = ({
     if (mode == 'update') setMatches(challenge.matches);
   };
 
+  const update = () => {
+    //..
+  };
+
   const submit = () => {
+    //payload
+    const entry_data = predictions.map((p) => {
+      return {
+        match_id: p.match_id,
+        predicted_winner_team_id: p.predicted_winner_team_id,
+      };
+    });
+
+    setLoading(true);
+    router.post(
+      `/bracket-challenges/${challenge.id}/submit-entry`,
+      { entry_data },
+      {
+        onFinish: () => setLoading(false),
+        preserveScroll: true,
+        preserveState: true,
+        replace: true,
+      },
+    );
+
+    //..
     //..
   };
 
@@ -273,17 +429,23 @@ export const BracketChallengeProvider = ({
     league,
     loading,
     mode,
-    isFilled,
+    predictionsFilledOut,
     clearMatch,
     getMatchesByConference,
     getFinalsMatch,
     getPlayoffInfo,
-    hasPrediction,
     clearAll,
-    teamAdvance,
-    submit,
+    promoteTeam,
     removeMatchWinner,
     getLinkedMatchName,
+    update,
+    revert,
+    submit,
+    isSlotLocked,
+    isFilledAny,
+    canUpdateMatches,
+    isUpdated,
+    hasRealWinners,
   };
 
   return (

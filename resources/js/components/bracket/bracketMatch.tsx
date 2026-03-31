@@ -7,7 +7,6 @@ import {
 import BracketTeamSlot from './bracketTeamSlot';
 import { useBracket } from '@/context/BracketChallengeProvider';
 import { RefreshCcw, X } from 'lucide-react';
-import { get } from 'http';
 
 const BracketMatch = ({
   conference,
@@ -20,16 +19,25 @@ const BracketMatch = ({
   conference?: Conference;
   wing?: 'left' | 'right';
 }) => {
-  const { clearMatch, getLinkedMatchName, removeMatchWinner } = useBracket();
+  const { clearMatch, getLinkedMatchName, removeMatchWinner, loading, mode } =
+    useBracket();
   const isDisabled =
-    gameMatch.teams.length < 2 || gameMatch.winner_team_id != null;
+    gameMatch.teams.length < 2 ||
+    gameMatch.predicted_winner_team_id != null ||
+    gameMatch.winner_team_id != null;
 
   const showClearButton =
+    mode !== 'view' &&
     gameMatch.teams.length > 0 &&
     gameMatch.round_index > 1 &&
-    gameMatch.winner_team_id == null;
+    !gameMatch.predicted_winner_team_id &&
+    !gameMatch.winner_team_id;
 
-  const showRefreshButton = !wing && gameMatch.winner_team_id !== null;
+  const showRefreshButton =
+    !wing &&
+    !loading &&
+    mode !== 'view' &&
+    (gameMatch.predicted_winner_team_id || gameMatch.winner_team_id);
 
   // const order = wing == 'right' ? 'flex-row-reverse' : '';
 
@@ -48,12 +56,14 @@ const BracketMatch = ({
 
           return (
             <BracketTeamSlot
-              key={team?.id || i}
+              key={`team${i}`}
               team={team}
               conference={conference}
               matchId={gameMatch.id}
               disabled={isDisabled}
-              winnerId={gameMatch.winner_team_id}
+              winnerId={
+                gameMatch.winner_team_id || gameMatch.predicted_winner_team_id
+              }
               wing={wing}
               placeholder={`${getLinkedMatchName(gameMatch.id, i + 1)} WINNER`}
             />
@@ -61,12 +71,7 @@ const BracketMatch = ({
         })}
       </div>
 
-      <div
-        className={cn(
-          'flex items-center justify-between gap-x-2 px-1.5',
-          order(),
-        )}
-      >
+      <div className={cn('flex items-center justify-between gap-x-2', order())}>
         <p
           className={cn(
             'text-[10px] font-semibold tracking-widest text-slate-400 uppercase',
@@ -77,18 +82,20 @@ const BracketMatch = ({
         </p>
         {showClearButton && (
           <button
-            className="cursor-pointer bg-amber-600 px-1 text-[10px] tracking-widest uppercase hover:bg-amber-500"
+            className="cursor-pointer bg-amber-600 px-1 text-[10px] tracking-widest uppercase hover:bg-amber-500 disabled:pointer-events-none"
             onClick={() => clearMatch(gameMatch.id, conference)}
             title="Clear Match"
+            disabled={loading}
           >
             <X size={13} />
           </button>
         )}
         {showRefreshButton && (
           <button
-            className="cursor-pointer bg-amber-600 px-1 text-[10px] tracking-widest uppercase hover:bg-amber-500"
+            className="cursor-pointer bg-amber-600 px-1 text-[10px] tracking-widest uppercase hover:bg-amber-500 disabled:pointer-events-none"
             onClick={() => removeMatchWinner(gameMatch.id)}
             title="Refresh Match Winner"
+            disabled={loading}
           >
             <RefreshCcw size={13} />
           </button>

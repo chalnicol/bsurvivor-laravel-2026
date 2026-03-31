@@ -10,9 +10,10 @@ const BracketFinals = ({ title }: { title?: string }) => {
   const gameMatch = getFinalsMatch();
 
   const winner = useMemo(() => {
-    if (!gameMatch || !gameMatch.winner_team_id) return null;
+    if (!gameMatch || !gameMatch.predicted_winner_team_id) return null;
     return (
-      gameMatch.teams.find((t) => t.id == gameMatch.winner_team_id) || null
+      gameMatch.teams.find((t) => t.id == gameMatch.predicted_winner_team_id) ||
+      null
     );
   }, [gameMatch]);
 

@@ -1,11 +1,13 @@
 import ContentBase from '@/components/contentBase';
 import Pagination from '@/components/pagination';
+import Pill from '@/components/pill';
 import SearchBar from '@/components/searchBar';
 import useDebounce from '@/hooks/use-debounce';
 import ProfileLayout from '@/layouts/proflle/layout';
+import { formatDate } from '@/lib/dateUtils';
 import type { BracketChallengeEntry } from '@/types/bracket';
-import { PaginatedResponse } from '@/types/general';
-import { router } from '@inertiajs/react';
+import { PaginatedResponse, PillColor } from '@/types/general';
+import { Link, router } from '@inertiajs/react';
 import { Sword, Trophy, User2Icon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -18,6 +20,12 @@ interface EntryListingProps {
 
 const EntryListing = ({ entries, filters }: EntryListingProps) => {
   const { data: items, meta, links } = entries;
+
+  const statusClr: Record<string, PillColor> = {
+    active: 'sky',
+    eliminated: 'rose',
+    won: 'emerald',
+  };
 
   return (
     <>
@@ -35,12 +43,28 @@ const EntryListing = ({ entries, filters }: EntryListingProps) => {
         <div>
           {items.length > 0 ? (
             <>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
                 {items.map((item) => (
                   // <UserCardLink key={item.id} user={item} />
-                  <div key={item.id}>
-                    <p>{item.name}</p>
-                  </div>
+                  <Link
+                    href={`/bracket-challenge-entries/${item.slug}`}
+                    key={item.id}
+                    className="divide-y divide-gray-500 rounded border border-gray-400 bg-gray-800 hover:bg-gray-700"
+                  >
+                    <div className="px-2 py-2 font-semibold">
+                      <p className="text-gray-300">{item.name}</p>
+                      <p>
+                        <Pill
+                          text={item.status}
+                          color={statusClr[item.status]}
+                        />
+                      </p>
+                    </div>
+
+                    <div className="flex px-2 py-1 text-[10px] tracking-widest uppercase">
+                      <p>{formatDate(item.created_at)}</p>
+                    </div>
+                  </Link>
                 ))}
               </div>
               <Pagination meta={meta} type="advanced" />

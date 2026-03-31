@@ -3,7 +3,12 @@ import { useEffect, useState } from 'react';
 import useDebounce from '../../hooks/use-debounce';
 import { BracketChallenge } from '@/types/bracket';
 import CustomLink from '@/components/customLink';
-import { CircleArrowDown, Trophy } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  CircleArrowDown,
+  Trophy,
+} from 'lucide-react';
 import Detail from '@/components/detailCard';
 import { formatDate } from '@/lib/dateUtils';
 import { AppCustomLayout } from '@/layouts/app-custom-layout';
@@ -13,7 +18,7 @@ import SearchBar from '@/components/searchBar';
 import Pagination from '@/components/pagination';
 import Pill from '@/components/pill';
 import { Link } from '@inertiajs/react';
-import { cn } from '@/lib/utils';
+import { cn, getImageUrl } from '@/lib/utils';
 
 interface BracketChallengesListProps {
   bracketChallenges: PaginatedResponse<BracketChallenge>;
@@ -44,7 +49,7 @@ const BracketChallengesList = ({
             <SearchBar
               filters={filters}
               queryUrl="/bracket-challenges"
-              className="my-4 pb-1.5 text-sm"
+              className="my-5 pb-1.5 text-sm"
               placeholder="Search by challenge name or league name.."
             />
 
@@ -56,39 +61,56 @@ const BracketChallengesList = ({
                       <Link
                         href={`/bracket-challenges/${item.slug}`}
                         key={item.id}
-                        className="rounded border border-gray-400 bg-gray-800 px-3 py-2 hover:bg-gray-700"
+                        className="group space-y-2 rounded border border-gray-400 bg-gray-800 p-3 hover:bg-gray-700"
                       >
-                        <p className="font-bold text-gray-300">{item.name}</p>
-                        <hr className="my-2 border border-gray-600" />
+                        <div className="flex items-center">
+                          <img
+                            src={getImageUrl(item.league?.logo || '')}
+                            alt={item.league?.short_name}
+                            className="aspect-square w-8 object-contain"
+                          />
+                          <p className="text-lg font-bold text-gray-300">
+                            {item.name}
+                          </p>
+                        </div>
 
-                        {item.status !== 'completed' ? (
-                          <div className="flex flex-col items-baseline gap-x-2 gap-y-0.5 text-xs font-semibold tracking-wide text-slate-400 uppercase md:flex-row">
-                            <p>Submission :</p>
-                            <p>
-                              <span
-                                className={cn(
-                                  item.is_open
-                                    ? 'text-sky-400'
-                                    : 'text-slate-400',
-                                )}
-                              >
-                                {formatDate(item.submission_start)}
-                              </span>
-                              <span>{' - '}</span>
-                              <span
-                                className={cn(
-                                  item.is_open
-                                    ? 'text-emerald-400'
-                                    : 'text-slate-400',
-                                )}
-                              >
-                                {formatDate(item.submission_end)}
-                              </span>
-                            </p>
-                          </div>
-                        ) : (
-                          <Pill text="Completed" color={'amber'} />
-                        )}
+                        {/* <hr className="my-2 border border-gray-600" /> */}
+
+                        <div className="rounded border border-t border-gray-500 bg-gray-700/20 px-3 py-2 tracking-wide text-slate-400 uppercase group-hover:bg-gray-600">
+                          {item.status !== 'completed' ? (
+                            <div className="space-y-0.5 text-xs">
+                              <p className="font-semibold">Submission</p>
+                              <div className="flex items-center gap-2">
+                                <p>Opens:</p>
+                                <p
+                                  className={cn(
+                                    item.is_open
+                                      ? 'text-sky-500'
+                                      : 'text-slate-400',
+                                  )}
+                                >
+                                  {formatDate(item.submission_start)}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <p>Closes:</p>
+
+                                <p
+                                  className={cn(
+                                    item.is_open
+                                      ? 'text-amber-400'
+                                      : 'text-slate-400',
+                                  )}
+                                >
+                                  {formatDate(item.submission_end)}
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-lg">IS COMPLETED</p>
+                          )}
+                        </div>
                       </Link>
                     ))}
                   </div>

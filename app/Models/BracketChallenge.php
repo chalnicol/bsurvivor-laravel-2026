@@ -128,6 +128,17 @@ class BracketChallenge extends Model
         return $this->isPublished() || $this->isCompleted();
     }
 
+    public function canUpdateMatches(): bool
+    {
+        // Allow override in local/testing environments
+        if (app()->environment('local') && config('app.bypass_submission_check')) {
+            return $this->isPublished();
+        }
+
+        return $this->isPublished()
+            && now()->isAfter($this->submission_end);
+    }
+
     /**
      * Get matches for a specific round.
      */

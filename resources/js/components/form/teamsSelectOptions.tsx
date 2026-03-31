@@ -43,7 +43,7 @@ const TeamsSelectOptions = ({
   };
 
   return (
-    <div className="rounded border border-gray-500 bg-gray-900 p-4 text-gray-300 shadow-lg shadow-gray-800">
+    <div className="rounded border border-gray-500 bg-gray-800 p-4 text-gray-300 shadow-lg shadow-gray-800">
       <div>
         <p className="font-semibold">{title}</p>
         <p className="text-xs text-slate-400">
@@ -64,7 +64,7 @@ const TeamsSelectOptions = ({
               onClick={() => handleOptionClick(t.id)}
               className={cn(
                 'flex w-full cursor-pointer items-center justify-between border-b border-gray-700 px-3 py-1.5 last:border-0',
-                'cursor-pointer text-sm transition-colors even:bg-gray-800 disabled:pointer-events-none',
+                'cursor-pointer text-sm transition-colors even:bg-gray-700/30 disabled:pointer-events-none',
                 isSelected
                   ? 'text-amber-100'
                   : 'text-gray-300 hover:text-amber-100',
@@ -109,7 +109,7 @@ const TeamsSelectOptions = ({
                   <div
                     key={id}
                     onClick={() => handleOptionClick(id)}
-                    className="flex cursor-pointer items-center gap-1 rounded border border-gray-600 bg-gray-800 px-2 py-1 text-xs text-gray-300 hover:bg-red-800/50"
+                    className="flex cursor-pointer items-center gap-1 rounded border border-gray-600 bg-gray-700 px-2 py-1 text-xs text-gray-300 hover:bg-red-800/50"
                     title="Click to remove"
                   >
                     <span className="font-bold text-amber-100">

@@ -8,7 +8,7 @@ import { BracketChallenge, BracketChallengeStatus } from '@/types/bracket';
 import type { PaginatedResponse, PillColor } from '@/types/general';
 import { Link, router } from '@inertiajs/react';
 import { Network } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface BracketChallengeListingProps {
   challenges: PaginatedResponse<BracketChallenge>;
@@ -66,7 +66,7 @@ const BracketChallengeListing = ({
       <div>
         {items.length > 0 ? (
           <>
-            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-2 lg:grid-cols-2">
               {items.map((item) => (
                 <Link
                   key={item.id}
@@ -75,7 +75,12 @@ const BracketChallengeListing = ({
                 >
                   <div className="flex gap-2 p-2">
                     <div className="flex-1">
-                      <p className="font-semibold text-gray-300">{item.name}</p>
+                      <p className="font-semibold text-gray-300">
+                        {/* {item.name.length > 36
+                          ? `${item.name.substring(0, 36)}...`
+                          : item.name} */}
+                        {item.name}
+                      </p>
                       <p className={cn('text-xs font-semibold text-slate-400')}>
                         {item.league?.short_name}
                       </p>

@@ -28,6 +28,11 @@ class BracketChallengeResource extends JsonResource
             'entries_count'    => $this->whenCounted('entries'),
             'is_open'          => $this->isAcceptingSubmissions(),
             'is_locked'        => $this->isLocked(),
+
+            'can_update_matches' => $this->when(
+                $request->user()?->hasRole(['admin', 'moderator']),
+                fn () => $this->canUpdateMatches(),
+            ),
     
 
             // Relationships — only present when loaded via with()

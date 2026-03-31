@@ -18,9 +18,14 @@ Route::get('/about', [PagesController::class, 'about'])->name('about');
 Route::get('/privacy-policy', [PagesController::class, 'policy'])->name('privacy-policy');
 Route::get('/terms-of-service', [PagesController::class, 'terms'])->name('terms-of-service');
 
-//..
+//bracket-challenge-entries..
+Route::get('/bracket-challenge-entries/{slug}', [PagesController::class, 'showEntry'])->name('bracket-challenge-entry');
+
+
+//bracket-challenges
 Route::get('/bracket-challenges', [BracketChallengePageController::class, 'index'])->name('bracket-challenges');
 Route::get('/bracket-challenges/{slug}', [BracketChallengePageController::class, 'show'])->name('bracket-challenges.show');
+
 
 
 // -------------------------------------------------------
@@ -55,6 +60,11 @@ Route::middleware(['auth', 'verified', 'check.blocked'])->group(function () {
     Route::delete('/profile/notifications/{id}', [NotificationController::class, 'destroy'])->name(
         'profile.notifications.destroy',
     );
+
+    //user submit an entry..
+    Route::post('/bracket-challenges/{bracketChallenge}/submit-entry', [BracketChallengePageController::class, 'submitEntry'])->name('bracket-challenges.submit-entry');
+
+
 
 
     // -------------------------------------------------------
@@ -91,27 +101,6 @@ Route::middleware(['auth', 'verified', 'check.blocked'])->group(function () {
         Route::post('/leagues', [LeagueController::class, 'store'])->name('leagues.store');
         Route::put('/leagues/{league}', [LeagueController::class, 'update'])->name('leagues.update');
         Route::delete('/leagues/{league}', [LeagueController::class, 'destroy'])->name('leagues.destroy');
-
-
-        //---bracket challenges-----
-        // Route::get('/bracket-challenges', [BracketChallengeController::class, 'index'])->name('bracket-challenges');
-        // Route::get('/bracket-challenges/create', [BracketChallengeController::class, 'create'])->name('bracket-challenges.create');
-        // Route::get('/bracket-challenges/trashed', [BracketChallengeController::class, 'trashed'])->name('bracket-challenges.trashed');
-        // Route::get('/bracket-challenges/get-teams', [BracketChallengeController::class, 'getTeams'])->name('bracket-challenges.get-teams');
-        // Route::post('/bracket-challenges', [BracketChallengeController::class, 'store'])->name('bracket-challenges.store');
-        // Route::get('/bracket-challenges/{bracketChallenge}', [BracketChallengeController::class, 'show'])->name('bracket-challenges.show');
-        // Route::get('/bracket-challenges/{bracketChallenge}/edit', [BracketChallengeController::class, 'edit'])->name('bracket-challenges.edit');
-        // Route::put('/bracket-challenges/{bracketChallenge}', [BracketChallengeController::class, 'update'])->name('bracket-challenges.update');
-        // Route::delete('/bracket-challenges/{bracketChallenge}', [BracketChallengeController::class, 'destroy'])->name('bracket-challenges.destroy');
-        // Route::patch('/bracket-challenges/{bracketChallenge}/restore', [BracketChallengeController::class, 'restore'])->name('bracket-challenges.restore');
-        // Route::patch('/bracket-challenges/{bracketChallenge}/toggle-public', [BracketChallengeController::class, 'togglePublic'])->name('bracket-challenges.toggle-public');
-        // Route::patch('/bracket-challenges/{bracketChallenge}/update-status', [BracketChallengeController::class, 'updateStatus'])->name('bracket-challenges.update-status');
-        //Route::delete('/bracket-challenges/{bracketChallenge}/force-delete', [BracketChallengeController::class, 'forceDelete'])->name('bracket-challenges.force-delete');
-        //Route::patch('/bracket-challenges/{bracketChallenge}/publish', [BracketChallengeController::class, 'publishChallenge'])->name('bracket-challenges.publish');
-
-        // Match actions
-        //Route::patch('/bracket-challenges/{bracketChallenge}/matches/{match}/declare-winner', [BracketChallengeController::class, 'declareWinner'])->name('bracket-challenges.matches.declare-winner');
-        //Route::patch('/bracket-challenges/{bracketChallenge}/matches/{match}/reset', [BracketChallengeController::class, 'resetMatch'])->name('bracket-challenges.matches.reset');
 
         //---bracket challenges-----
         Route::get('/bracket-challenges', [BracketChallengeController::class, 'index'])->name('bracket-challenges');

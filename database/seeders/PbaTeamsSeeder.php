@@ -31,11 +31,11 @@ class PbaTeamsSeeder extends Seeder
             [
                 'club_name' => 'Converge',
                 'monicker' => 'FiberXers',
-                'short_name' => 'CNF',
+                'short_name' => 'CFX',
                 'logo' => null,
             ],
             [
-                'club_name' => 'Magnolia',
+                'club_name' => 'Magnolia Chicken Timplados',
                 'monicker' => 'Hotshots',
                 'short_name' => 'MAG',
                 'logo' => null,
@@ -52,24 +52,20 @@ class PbaTeamsSeeder extends Seeder
                 'short_name' => 'NLEX',
                 'logo' => null,
             ],
-            [
-                'club_name' => 'NorthPort',
-                'monicker' => 'Batang Pier',
-                'short_name' => 'NBP',
-                'logo' => null,
-            ],
+            
             [
                 'club_name' => 'Phoenix Super LPG',
                 'monicker' => 'Fuel Masters',
                 'short_name' => 'PHX',
                 'logo' => null,
             ],
-            [
+             [
                 'club_name' => 'Rain or Shine',
                 'monicker' => 'Elasto Painters',
                 'short_name' => 'ROS',
                 'logo' => null,
             ],
+           
             [
                 'club_name' => 'San Miguel',
                 'monicker' => 'Beermen',
@@ -77,8 +73,21 @@ class PbaTeamsSeeder extends Seeder
                 'logo' => null,
             ],
             [
+                'club_name' => 'Terrafirma',
+                'monicker' => 'Dyip',
+                'short_name' => 'TFD',
+                'logo' => null,
+            ],
+            [
+                'club_name' => 'Titan Ultra',
+                'monicker' => 'Giant Risers',
+                'short_name' => 'TGR',
+                'logo' => null,
+            ],
+
+            [
                 'club_name' => 'TNT',
-                'monicker' => 'Tropang Giga',
+                'monicker' => 'Tropang 5G',
                 'short_name' => 'TNT',
                 'logo' => null,
             ],

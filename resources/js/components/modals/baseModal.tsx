@@ -25,8 +25,8 @@ const BaseModal: React.FC<BaseModalProps> = ({ children, size = 'md' }) => {
         { scale: 0 },
         {
           scale: 1,
-          duration: 0.4,
-          ease: 'elastic.out(1, 0.7)',
+          duration: 0.6,
+          ease: 'elastic.out(1, 0.6)',
           //   ease: 'power4.out',
           overwrite: true,
         },
